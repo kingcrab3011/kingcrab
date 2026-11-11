@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { createServer } from 'node:http';
 import { GoogleGenAI, Type } from '@google/genai';
 
 dotenv.config();
@@ -809,6 +810,8 @@ app.get('/api/ai/test-grading', (req, res) => {
 
 // Vite middleware in dev or static files in production
 async function startServer() {
+  const httpServer = createServer(app);
+
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'dist')));
     app.get('*', (req, res) => {
@@ -817,13 +820,16 @@ async function startServer() {
   } else {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: { server: httpServer },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   }
 
-  app.listen(port, '0.0.0.0', () => {
+  httpServer.listen(port, '0.0.0.0', () => {
     console.log(`Văn Nghị Luận Lab server running at http://0.0.0.0:${port}`);
   });
 }
